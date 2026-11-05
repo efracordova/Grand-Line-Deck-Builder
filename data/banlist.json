@@ -1,0 +1,9 @@
+{
+  "source": "https://en.onepiece-cardgame.com/rules/restriction/",
+  "effective": "2026-10-12",
+  "applies_to": ["standard", "extra_regulation"],
+  "note": "Bans include all parallel/alt-art versions of the card number.",
+  "banned": ["OP06-047", "OP03-040", "OP06-086", "ST10-001", "OP06-116", "OP14-020"],
+  "restricted": [],
+  "banned_pairs": [["OP07-115", "EB04-058"], ["OP11-040", "OP11-067"], ["OP11-040", "OP08-069"]]
+}

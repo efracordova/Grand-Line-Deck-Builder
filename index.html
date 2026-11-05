@@ -1,0 +1,960 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Grand Line Deck Builder</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Layout: a single guided column — three numbered steps (they are a real sequence), leader grid, slide-in detail sheet. */
+:root{
+  --bg:#f3f6f9; --surface:#ffffff; --sunk:#e6ecf2; --fg:#14202e; --muted:#566577; --line:#d3dce6;
+  --accent:#0f6e86; --accent-fg:#ffffff; --danger:#b4232a; --danger-bg:#fde8e8; --warn:#8a5a00; --warn-bg:#fff3d6; --ok:#1d7a46; --ok-bg:#e3f5ea;
+  --c-red:#c8312b; --c-green:#24875a; --c-blue:#2563b8; --c-purple:#7b3fa0; --c-black:#2b2f36; --c-yellow:#d9a400;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif; --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --shadow:0 1px 2px rgba(20,32,46,.06),0 4px 14px rgba(20,32,46,.08);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e141b; --surface:#161e28; --sunk:#1d2733; --fg:#e7edf3; --muted:#9aa9ba; --line:#2a3644;
+  --accent:#4cb8d1; --accent-fg:#06222a; --danger:#ff7a7f; --danger-bg:#3a1a1d; --warn:#f2c46b; --warn-bg:#3a2e14; --ok:#6fd49b; --ok-bg:#15301f;
+  --c-black:#8a95a3; --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.35); color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0e141b; --surface:#161e28; --sunk:#1d2733; --fg:#e7edf3; --muted:#9aa9ba; --line:#2a3644;
+  --accent:#4cb8d1; --accent-fg:#06222a; --danger:#ff7a7f; --danger-bg:#3a1a1d; --warn:#f2c46b; --warn-bg:#3a2e14; --ok:#6fd49b; --ok-bg:#15301f;
+  --c-black:#8a95a3; --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.35); color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-block:20px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:28px}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;border-bottom:2px solid var(--fg);padding-bottom:12px}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(2rem,5vw,2.9rem);line-height:1;margin:0;letter-spacing:.01em;text-transform:uppercase;text-wrap:balance}
+.tag{color:var(--muted);margin:4px 0 0;max-width:60ch}
+.datastamp{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+section.step{display:flex;flex-direction:column;gap:12px}
+.step-h{display:flex;align-items:baseline;gap:10px}
+.step-n{font-family:var(--display);font-weight:800;font-size:1rem;width:28px;height:28px;border-radius:50%;background:var(--fg);color:var(--bg);display:inline-grid;place-items:center;flex:none;transform:translateY(4px)}
+h2{font-family:var(--display);font-weight:700;font-size:1.6rem;margin:0;text-transform:uppercase;letter-spacing:.02em}
+.hint{color:var(--muted);margin:0;font-size:.95rem;max-width:70ch}
+/* format */
+.formats{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.opt{all:unset;box-sizing:border-box;cursor:pointer;background:var(--surface);border:2px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.opt:hover{border-color:var(--muted)}
+.opt:focus-visible,.chip:focus-visible,.lcard:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.opt[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.opt b{font-family:var(--display);font-size:1.25rem;text-transform:uppercase;letter-spacing:.02em}
+.opt span{color:var(--muted);font-size:.9rem}
+.opt .def{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+/* colors */
+.colors{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.copt{all:unset;box-sizing:border-box;cursor:pointer;background:var(--surface);border:2px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px;min-width:0;position:relative;overflow:hidden}
+.copt::before{content:"";position:absolute;inset:0 0 auto;height:6px;background:var(--sw)}
+.copt[aria-pressed="true"]{border-color:var(--sw);box-shadow:inset 0 0 0 1px var(--sw)}
+.copt:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.copt .nm{display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-top:4px}
+.copt b{font-family:var(--display);font-size:1.3rem;text-transform:uppercase}
+.copt .style{font-size:.72rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.copt p{margin:0;font-size:.86rem;color:var(--muted);line-height:1.4}
+.count{font-variant-numeric:tabular-nums;font-size:.8rem;color:var(--muted);white-space:nowrap}
+.duo{--sw:linear-gradient(90deg,var(--c-red),var(--c-green),var(--c-blue),var(--c-purple),var(--c-black),var(--c-yellow))}
+.pairs{background:var(--sunk);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.pairs-h{font-weight:700;font-size:.9rem}
+.pairgrid{display:flex;flex-wrap:wrap;gap:8px}
+.chip{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:2px solid var(--line);border-radius:999px;padding:6px 12px 6px 6px;font-size:.9rem}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--surface);box-shadow:inset 0 0 0 1px var(--accent)}
+.chip[disabled]{opacity:.45;cursor:not-allowed}
+.dot2{width:22px;height:22px;border-radius:50%;flex:none;border:1px solid var(--line)}
+.blurb{background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--sw);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.blurb b{font-family:var(--display);font-size:1.15rem;text-transform:uppercase}
+.blurb p{margin:0;font-size:.95rem}
+.blurb small{color:var(--muted)}
+/* toolbar */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.toolbar input,.toolbar select{font:inherit;font-size:.95rem;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.toolbar input{flex:1 1 220px}
+.toolbar label{font-size:.85rem;color:var(--muted);display:flex;align-items:center;gap:6px}
+.notice{font-size:.88rem;color:var(--muted);margin:0}
+.notice button{all:unset;cursor:pointer;color:var(--accent);text-decoration:underline;font-weight:700}
+/* grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:14px}
+.lcard{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);min-width:0;transition:transform .12s ease}
+.lcard:hover{transform:translateY(-2px)}
+.lcard[aria-current="true"]{outline:3px solid var(--accent);outline-offset:2px}
+.lcard.isbanned .art img{filter:grayscale(1) contrast(.9);opacity:.6}
+.art{position:relative;aspect-ratio:600/838;background:var(--sunk);max-width:100%}
+.art img{width:100%;height:100%;object-fit:cover;display:block}
+.badges{position:absolute;inset:6px 6px auto 6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
+.b{font-size:.68rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:999px;line-height:1.5;white-space:nowrap}
+.b-ban{background:var(--danger);color:#fff}
+.b-pair{background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger)}
+.b-rule{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn)}
+.b-rot{background:var(--surface);color:var(--muted);border:1px solid var(--line)}
+.b-arts{background:rgba(0,0,0,.65);color:#fff}
+.meta{padding:8px 10px 10px;display:flex;flex-direction:column;gap:3px}
+.meta .n{font-weight:700;line-height:1.25;font-size:.95rem}
+.meta .s{display:flex;justify-content:space-between;gap:6px;font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.cbar{display:flex;height:5px;border-radius:3px;overflow:hidden}
+.cbar i{flex:1}
+.empty{grid-column:1/-1;background:var(--surface);border:1px dashed var(--line);border-radius:10px;padding:24px;text-align:center;color:var(--muted)}
+/* detail sheet */
+.scrim{position:fixed;inset:0;background:rgba(8,14,20,.5);z-index:20}
+.sheet{position:fixed;z-index:21;top:0;right:0;bottom:0;width:min(760px,100%);background:var(--bg);box-shadow:-10px 0 30px rgba(0,0,0,.25);overflow-y:auto;padding-top:calc(16px + env(safe-area-inset-top,0px));padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.sheet-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
+.sheet h3{font-family:var(--display);font-weight:800;font-size:2rem;line-height:1.05;margin:0;text-transform:uppercase;text-wrap:balance}
+.sheet .sub{color:var(--muted);font-size:.9rem;font-variant-numeric:tabular-nums}
+.x{all:unset;cursor:pointer;font-size:1.6rem;line-height:1;width:40px;height:40px;display:grid;place-items:center;border-radius:50%;background:var(--sunk);flex:none}
+.dgrid{display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:20px}
+@media (max-width:620px){.dgrid{grid-template-columns:1fr}.dgrid .bigart{max-width:300px;margin:0 auto;width:100%}}
+.bigart img{width:100%;border-radius:12px;box-shadow:var(--shadow);display:block}
+.thumbs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.thumb{all:unset;cursor:pointer;width:52px;border-radius:5px;overflow:hidden;border:2px solid transparent;aspect-ratio:600/838;background:var(--sunk)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb[aria-pressed="true"]{border-color:var(--accent)}
+.artnote{font-size:.8rem;color:var(--muted);margin-top:6px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.stat small{display:block;font-size:.7rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.stat b{font-family:var(--display);font-size:1.5rem;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;line-height:1.15;display:block}
+.stat b.sm{font-size:1.1rem}
+.dcol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.box h4{margin:0 0 6px;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.effect{white-space:pre-line;margin:0}
+.kw{display:inline-block;font-size:.8em;font-weight:700;background:var(--fg);color:var(--bg);border-radius:4px;padding:0 5px;margin:0 1px;line-height:1.5}
+.alert{border-radius:8px;padding:10px 12px;font-size:.92rem;display:flex;flex-direction:column;gap:2px}
+.alert b{font-size:.78rem;letter-spacing:.07em;text-transform:uppercase}
+.a-ban{background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger)}
+.a-rule{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn)}
+.a-info{background:var(--sunk);color:var(--fg)}
+.legal{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.lg{border-radius:8px;padding:8px 10px;font-size:.85rem;display:flex;flex-direction:column}
+.lg b{font-size:.72rem;letter-spacing:.07em;text-transform:uppercase}
+.lg.y{background:var(--ok-bg);color:var(--ok)}
+.lg.n{background:var(--danger-bg);color:var(--danger)}
+.typechips{display:flex;flex-wrap:wrap;gap:6px}
+.typechips span{background:var(--sunk);border-radius:999px;padding:2px 10px;font-size:.85rem}
+.primary{all:unset;box-sizing:border-box;cursor:pointer;text-align:center;background:var(--accent);color:var(--accent-fg);font-weight:700;border-radius:10px;padding:12px 16px;font-size:1rem}
+.primary[disabled]{opacity:.45;cursor:not-allowed}
+.popline{position:relative;display:block;height:18px;background:var(--sunk);border-radius:4px;overflow:hidden;margin-top:3px}
+.popline i{position:absolute;inset:0 auto 0 0;background:var(--accent);opacity:.28}
+.popline em{position:relative;font-style:normal;font-size:.74rem;font-weight:700;padding-left:6px;line-height:18px;font-variant-numeric:tabular-nums}
+.popbig{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.popbig b{font-family:var(--display);font-size:2rem;font-variant-numeric:tabular-nums;color:var(--accent)}
+.popbig span{color:var(--muted);font-size:.9rem}
+footer a{color:var(--accent)}
+.chosen{background:var(--surface);border:2px solid var(--accent);border-radius:12px;padding:14px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.chosen img{width:64px;border-radius:6px}
+.chosen .t{flex:1 1 220px;min-width:0}
+.chosen b{font-family:var(--display);font-size:1.3rem;text-transform:uppercase}
+.chosen p{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+.ghost{all:unset;cursor:pointer;color:var(--accent);font-weight:700;text-decoration:underline}
+footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+@media (prefers-reduced-motion:reduce){.lcard{transition:none}.lcard:hover{transform:none}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Grand Line Deck Builder</h1>
+      <p class="tag">Build a One Piece Card Game deck step by step. Start with the format you'll play, then the colors, then your Leader.</p>
+    </div>
+    <div class="datastamp" id="stamp"></div>
+  </header>
+
+  <section class="step mydecks" id="mydecks" hidden aria-labelledby="h-my">
+    <div class="step-h"><h2 id="h-my">My decks</h2></div>
+    <p class="hint">Saved on this device. Each deck shows which formats it's legal in.</p>
+    <div class="dlist" id="dlist"></div>
+  </section>
+
+  <section class="step" aria-labelledby="h-format">
+    <div class="step-h"><span class="step-n">1</span><h2 id="h-format">Format</h2></div>
+    <p class="hint">Where will you play this deck? This decides which cards you can use. Every deck you save will also show which formats it's legal in.</p>
+    <div class="formats" id="formats" role="group" aria-label="Format"></div>
+  </section>
+
+  <section class="step" aria-labelledby="h-color">
+    <div class="step-h"><span class="step-n">2</span><h2 id="h-color">Leader color</h2></div>
+    <p class="hint">Your Leader's color decides which cards can go in your deck. Each color tends to play a certain way, though every Leader adds its own twist.</p>
+    <div class="colors" id="colors" role="group" aria-label="Leader color"></div>
+    <div class="pairs" id="pairs" hidden>
+      <div class="pairs-h">Pick a two-color pairing</div>
+      <div class="pairgrid" id="pairgrid" role="group" aria-label="Two-color pairing"></div>
+    </div>
+    <div id="blurb"></div>
+  </section>
+
+  <section class="step" aria-labelledby="h-leader">
+    <div class="step-h"><span class="step-n">3</span><h2 id="h-leader">Leader</h2></div>
+    <p class="hint">Your Leader starts the game in play and sets your Life (how many hits you can take). Tap a Leader to read its effect and see its other art versions.</p>
+    <div id="chosen"></div>
+    <div class="toolbar">
+      <input id="q" type="search" placeholder="Search by name, type or effect" aria-label="Search Leaders">
+      <label for="sort">Sort
+        <select id="sort">
+          <option value="new">Newest first</option>
+          <option value="old">Oldest first</option>
+          <option value="name">Name A–Z</option>
+          <option value="pop">Tournament popularity</option>
+        </select>
+      </label>
+    </div>
+    <p class="notice" id="notice"></p>
+    <div class="grid" id="grid"></div>
+  </section>
+
+
+  <section class="step" id="step4" hidden aria-labelledby="h-build">
+    <div class="step-h"><span class="step-n">4</span><h2 id="h-build">Build your deck</h2></div>
+    <p class="hint" id="b-leader"></p>
+    <div class="builder">
+      <div class="browser">
+        <div class="filters" id="filters"></div>
+        <p class="notice" id="cnote"></p>
+        <div class="cgrid" id="cards"></div>
+      </div>
+      <aside class="panel" id="deckpanel" aria-label="Your deck">
+        <div class="phead">
+          <input id="dname" aria-label="Deck name" maxlength="60">
+          <div class="prow"><span class="cnt" id="dcount">0/50</span><span class="saved" id="dsaved"></span></div>
+          <div class="meter"><i id="dmeter" style="width:0"></i></div>
+          <div class="lchips" id="dlegal"></div>
+        </div>
+        <div class="tabs" role="tablist"><button class="tab" role="tab" data-tab="list" id="tab-list">Deck</button><button class="tab" role="tab" data-tab="stats" id="tab-stats">Stats</button><button class="tab" role="tab" data-tab="compare" id="tab-compare">Compare</button><button class="tab" role="tab" data-tab="matchups" id="tab-matchups">Matchups</button><button class="tab" role="tab" data-tab="hand" id="tab-hand">Test hand</button></div>
+        <div class="pbody" id="pbody"></div>
+        <div class="pfoot"><button class="btn pri" id="dsave">Save deck</button><button class="btn" id="dexport">Export</button><button class="btn" id="dimport">Import</button><button class="btn" id="dnew">New deck</button></div>
+      </aside>
+    </div>
+  </section>
+
+  <footer id="foot">Card data and images: Bandai's official One Piece Card Game card list. Banned list effective Oct 12, 2026. Standard currently allows block icons 2–5 (through Mar 31, 2027).</footer>
+</div>
+
+<div class="mbar" id="mbar"><span id="mbtext"></span><button id="mbgo">View deck</button></div>
+<div class="scrim" id="scrim" hidden></div>
+<aside class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="d-name"></aside>
+
+<script>
+const COLORS = [
+  {k:'Red',    style:'Aggressive', d:'Strong attackers, power boosts and Rush. Generally tries to win fast by dropping your opponent\'s Life before they set up.'},
+  {k:'Green',  style:'Control', d:'Rests your opponent\'s Characters and DON!! so they can\'t attack or block. Often plays many cheaper Characters at once.'},
+  {k:'Blue',   style:'Hand & board control', d:'Draws cards, arranges your deck, and returns opponents\' Characters to their hand or the bottom of their deck. Patient and flexible.'},
+  {k:'Purple', style:'Ramp', d:'Gains extra DON!! quickly, then spends it on powerful "DON!! −X" effects. Built around big turns.'},
+  {k:'Black',  style:'Removal', d:'Lowers costs and KOs your opponent\'s Characters, and often brings cards back from the trash. Good if you like answering threats.'},
+  {k:'Yellow', style:'Life & Triggers', d:'Changes how Life cards work and gets value from Trigger effects when you take damage. Often comes back strong late in the game.'},
+];
+const DUO = {k:'Two-Color', style:'Mixed', d:'Combines two colors\' styles and can use cards from both. Usually more flexible, but easiest once you know both colors.'};
+const ORDER = COLORS.map(c=>c.k);
+const FORMATS = [
+  {k:'standard', name:'Standard', d:'Official tournaments and store events. Newer cards only (block icons 2–5) and the banned list applies.', def:true},
+  {k:'extra', name:'Extra Regulation', d:'Official non-rotating format. Almost every card ever released, minus the banned list.'},
+  {k:'casual', name:'Casual', d:'Just for fun with friends. Any card, no banned list. Basic deck rules still apply.'},
+];
+const cvar = c => `var(--c-${c.toLowerCase()})`;
+const pairKey = cs => [...cs].sort((a,b)=>ORDER.indexOf(a)-ORDER.indexOf(b)).join('/');
+const esc = s => String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const fmtEffect = s => esc(s).replace(/\[([^\]]{1,40})\]/g,'<span class="kw">$1</span>');
+const store = { get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}} };
+
+let META=null, LEADERS=[], ART={}, ALT=null, altLoading=null;
+const S = { format: store.get('fmt')||'standard', color:null, pair:null, q:'', sort:'new', chosen:null, showAll:false };
+
+const relKey = l => (l.released||'0000') + l.num;
+function inFormat(l, f=S.format){ return l.legal[f]; }
+function colorMatch(l){
+  if(!S.color) return true;
+  if(S.color==='Two-Color') return l.colors.length===2 && (!S.pair || pairKey(l.colors)===S.pair);
+  return l.colors.length===1 && l.colors[0]===S.color;
+}
+
+function renderFormats(){
+  const el=document.getElementById('formats');
+  el.innerHTML = FORMATS.map(f=>`<button class="opt" id="fmt-${f.k}" aria-pressed="${S.format===f.k}" data-f="${f.k}">
+    ${f.def?'<span class="def">Default</span>':''}<b>${f.name}</b><span>${f.d}</span></button>`).join('');
+  el.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{S.format=b.dataset.f; store.set('fmt',S.format); S.showAll=false; renderAll(); window.dispatchEvent(new Event('gldb:format'));});
+}
+function countFor(pred){ return LEADERS.filter(l=>(S.format==='casual'||inFormat(l)) && pred(l)).length; }
+function renderColors(){
+  const el=document.getElementById('colors');
+  const opts=[...COLORS,DUO];
+  el.innerHTML = opts.map(c=>{
+    const n = c.k==='Two-Color'? countFor(l=>l.colors.length===2) : countFor(l=>l.colors.length===1&&l.colors[0]===c.k);
+    const sw = c.k==='Two-Color'? '' : `style="--sw:${cvar(c.k)}"`;
+    return `<button class="copt ${c.k==='Two-Color'?'duo':''}" ${sw} id="col-${c.k}" aria-pressed="${S.color===c.k}" data-c="${c.k}">
+      <span class="nm"><b>${c.k}</b><span class="count">${n} Leaders</span></span>
+      <span class="style">${c.style}</span></button>`;}).join('');
+  el.querySelectorAll('.copt').forEach(b=>b.onclick=()=>{ const c=b.dataset.c; S.color = S.color===c?null:c; if(S.color!=='Two-Color') S.pair=null; renderAll(); });
+  // pairings
+  const pw=document.getElementById('pairs'); pw.hidden = S.color!=='Two-Color';
+  if(S.color==='Two-Color'){
+    const keys=[]; for(let i=0;i<6;i++)for(let j=i+1;j<6;j++)keys.push(ORDER[i]+'/'+ORDER[j]);
+    document.getElementById('pairgrid').innerHTML = keys.map(k=>{
+      const [a,b]=k.split('/'); const n=countFor(l=>l.colors.length===2&&pairKey(l.colors)===k);
+      return `<button class="chip" id="pair-${k.replace('/','-')}" aria-pressed="${S.pair===k}" data-p="${k}" ${n?'':'disabled'}>
+        <span class="dot2" style="background:linear-gradient(135deg,${cvar(a)} 50%,${cvar(b)} 50%)"></span>${a} / ${b} <span class="count">${n}</span></button>`;}).join('');
+    document.querySelectorAll('#pairgrid .chip').forEach(b=>b.onclick=()=>{S.pair = S.pair===b.dataset.p?null:b.dataset.p; renderAll();});
+  }
+  // blurb
+  const sel = S.color==='Two-Color'?DUO:COLORS.find(c=>c.k===S.color);
+  const bl=document.getElementById('blurb');
+  if(!sel){ bl.innerHTML=''; return; }
+  let extra='';
+  if(S.color==='Two-Color' && S.pair){ const [a,b]=S.pair.split('/'); const A=COLORS.find(c=>c.k===a),B=COLORS.find(c=>c.k===b); extra=`<small>${a}: ${A.style}. ${b}: ${B.style}.</small>`; }
+  bl.innerHTML = `<div class="blurb" style="--sw:${S.color==='Two-Color'?(S.pair?cvar(S.pair.split('/')[0]):'var(--accent)'):cvar(S.color)}"><b>${sel.k} · ${sel.style}</b><p>${sel.d}</p>${extra}</div>`;
+}
+function badgesFor(l){
+  const out=[];
+  if(l.banned) out.push('<span class="b b-ban">Banned</span>');
+  else if(l.banned_with.length) out.push('<span class="b b-pair">Banned pair</span>');
+  if(l.rule_note) out.push('<span class="b b-rule">Special rule</span>');
+  if(S.format==='standard' && l.rotates_2027 && !l.banned) out.push('<span class="b b-rot">Rotates Apr 2027</span>');
+  return out.join('');
+}
+function renderGrid(){
+  let list = LEADERS.filter(colorMatch);
+  const hidden = S.format==='casual'?[]:list.filter(l=>!inFormat(l)&&!l.banned);
+  if(S.format!=='casual' && !S.showAll) list = list.filter(l=>inFormat(l)||l.banned);
+  const q=S.q.trim().toLowerCase();
+  if(q) list=list.filter(l=>(l.name+' '+l.num+' '+l.types.join(' ')+' '+(l.effect||'')).toLowerCase().includes(q));
+  const popv = l => l.popularity?l.popularity.share:-1;
+  const cmp={pop:(a,b)=>popv(b)-popv(a)||relKey(b).localeCompare(relKey(a)), new:(a,b)=>relKey(b).localeCompare(relKey(a)), old:(a,b)=>relKey(a).localeCompare(relKey(b)), name:(a,b)=>a.name.localeCompare(b.name)||relKey(b).localeCompare(relKey(a))}[S.sort];
+  list.sort((a,b)=> (a.banned&&S.format!=='casual')-(b.banned&&S.format!=='casual') || cmp(a,b));
+  const fmtName=FORMATS.find(f=>f.k===S.format).name;
+  const n=document.getElementById('notice');
+  const parts=[`Showing ${list.length} Leader${list.length===1?'':'s'}${S.color?` (${S.color==='Two-Color'?(S.pair||'all two-color'):S.color})`:''} for ${fmtName}.`];
+  if(hidden.length && !S.showAll) parts.push(`${hidden.length} older Leader${hidden.length===1?' is':'s are'} not legal in ${fmtName}. <button id="showall">Show them</button>`);
+  else if(hidden.length && S.showAll) parts.push(`Including ${hidden.length} not legal in ${fmtName}. <button id="showall">Hide them</button>`);
+  n.innerHTML=parts.join(' ');
+  const sa=document.getElementById('showall'); if(sa) sa.onclick=()=>{S.showAll=!S.showAll; renderGrid();};
+  const g=document.getElementById('grid');
+  const maxPop=Math.max(1,...LEADERS.map(popv));
+  if(!list.length){ g.innerHTML=`<div class="empty">No Leaders match. Try a different color, pairing or search.</div>`; return; }
+  g.innerHTML=list.map(l=>{
+    const banned = l.banned && S.format!=='casual';
+    const notLegal = !banned && S.format!=='casual' && !inFormat(l);
+    return `<button class="lcard ${banned||notLegal?'isbanned':''}" data-n="${l.num}" aria-current="${S.chosen===l.num}" aria-label="${esc(l.name)} ${l.num}">
+      <div class="art"><img loading="lazy" alt="${esc(l.name)} Leader card" src="${ART[l.arts[0].id]||''}">
+        <div class="badges">${badgesFor(l)}${notLegal?'<span class="b b-rot">Not in Standard</span>':''}${l.arts.length>1?`<span class="b b-arts">${l.arts.length} arts</span>`:''}</div></div>
+      <div class="meta"><div class="cbar">${l.colors.map(c=>`<i style="background:${cvar(c)}"></i>`).join('')}</div>
+        <span class="n">${esc(l.name)}</span>
+        <span class="s"><span>${l.num}</span><span>Life ${l.life} · ${(l.power/1000)}K</span></span>${l.popularity?`<span class="popline"><i style="width:${Math.max(4,l.popularity.share/maxPop*100)}%"></i><em>${l.popularity.share}% of top decks</em></span>`:''}</div></button>`;}).join('');
+  g.querySelectorAll('.lcard').forEach(b=>b.onclick=()=>openDetail(b.dataset.n));
+}
+function renderChosen(){
+  const el=document.getElementById('chosen'); const l=LEADERS.find(x=>x.num===S.chosen);
+  if(!l){el.innerHTML='';return;}
+  const okHere = S.format==='casual' || inFormat(l);
+  el.innerHTML=`<div class="chosen"><img alt="" src="${ART[l.arts[0].id]||''}"><div class="t"><b>${esc(l.name)}</b> <span class="sub">${l.num}</span>
+    <p>${okHere?'Your Leader is set. Add cards in step 4 below.':'This Leader is not legal in the format you picked.'}</p></div>
+    <span class="dact"><button class="ghost" id="toB">Go to deck</button><button class="ghost" id="changeL">Change Leader</button></span></div>`;
+  document.getElementById('changeL').onclick=()=>{S.chosen=null; renderAll(); document.getElementById('h-leader').scrollIntoView({behavior:'smooth'});};
+  document.getElementById('toB').onclick=()=>document.getElementById('step4').scrollIntoView({behavior:'smooth'});
+}
+async function loadAlt(){ if(ALT) return ALT; if(!altLoading) altLoading=fetch('art-alt.json').then(r=>r.json()).then(j=>ALT=j).catch(()=>ALT={}); return altLoading; }
+function openDetail(num, artIdx=0){
+  const l=LEADERS.find(x=>x.num===num); const sh=document.getElementById('sheet');
+  const art = id => ART[id] || (ALT&&ALT[id]) || '';
+  const a=l.arts[artIdx];
+  const fmtLegal = f => f==='casual' ? true : l.legal[f];
+  const canPick = S.format==='casual' || inFormat(l);
+  const alerts=[];
+  if(l.banned) alerts.push(`<div class="alert a-ban"><b>Banned</b>On Bandai's banned list (Oct 12, 2026). It can't be used in Standard or Extra Regulation. You can still play it in Casual.</div>`);
+  if(l.banned_with.length) alerts.push(`<div class="alert a-ban"><b>Banned pair</b>Can't be in the same deck as ${l.banned_with.map(n=>`<strong>${n}</strong>`).join(' or ')} in Standard or Extra Regulation.</div>`);
+  if(l.rule_note) alerts.push(`<div class="alert a-rule"><b>Changes the rules</b>${esc(l.rule_note)}</div>`);
+  if(l.rotates_2027 && !l.banned) alerts.push(`<div class="alert a-info"><b>Rotation</b>Block ${l.block}. Leaves Standard on April 1, 2027. Still playable in Extra Regulation and Casual after that.</div>`);
+  sh.innerHTML=`<div class="sheet-top"><div><h3 id="d-name">${esc(l.name)}</h3><div class="sub">${l.num} · ${l.colors.join(' / ')} Leader · ${esc(l.set)} · Block ${l.block}</div></div>
+    <button class="x" id="closeD" aria-label="Close">×</button></div>
+    <div class="dgrid">
+      <div class="bigart"><img id="bigimg" alt="${esc(l.name)} card art" src="${art(a.id)}">
+        ${l.arts.length>1?`<div class="thumbs" role="group" aria-label="Art versions">${l.arts.map((x,i)=>`<button class="thumb" aria-pressed="${i===artIdx}" data-i="${i}" aria-label="Art version ${i+1}"><img alt="" src="${art(x.id)}"></button>`).join('')}</div>`:''}
+        <div class="artnote">${l.arts.length>1?`${l.arts.length} art versions. They all play the same.<br>`:''}This version: ${esc(a.from||'')}${a.price!=null?` · about $${a.price.toFixed(2)} on TCGplayer`:''}</div></div>
+      <div class="dcol">
+        ${alerts.join('')}
+        <div class="stats"><div class="stat"><small>Life</small><b>${l.life}</b></div><div class="stat"><small>Power</small><b>${l.power.toLocaleString()}</b></div><div class="stat"><small>Attribute</small><b class="${(l.attribute||'').length>8?'sm':''}">${esc(l.attribute||'—')}</b></div></div>
+        <div class="box"><h4>Effect</h4><p class="effect">${l.effect?fmtEffect(l.effect):'No effect.'}</p></div>
+        <div class="box"><h4>Types</h4><div class="typechips">${l.types.map(t=>`<span>${esc(t)}</span>`).join('')}</div>
+          <p class="hint" style="margin-top:8px;font-size:.85rem">Many cards check your Leader's type, so these will shape your card suggestions.</p></div>
+        <div class="box"><h4>Legal in</h4><div class="legal">${FORMATS.map(f=>`<div class="lg ${fmtLegal(f.k)?'y':'n'}"><b>${fmtLegal(f.k)?'Legal':'Not legal'}</b>${f.name}</div>`).join('')}</div></div>
+        ${popBox(l)}
+        ${typeof leaderResultsBox==='function'?leaderResultsBox(l):''}
+        <button class="primary" id="pickL" ${canPick?'':'disabled'}>${canPick?'Choose this Leader':'Not legal in '+FORMATS.find(f=>f.k===S.format).name}</button>
+      </div></div>`;
+  sh.hidden=false; document.getElementById('scrim').hidden=false; document.body.style.overflow='hidden';
+  document.getElementById('closeD').onclick=closeDetail;
+  document.getElementById('pickL').onclick=()=>{S.chosen=l.num; closeDetail(); renderAll(); window.dispatchEvent(new CustomEvent('gldb:leader',{detail:l.num})); setTimeout(()=>document.getElementById('step4').scrollIntoView({behavior:'smooth'}),50);};
+  sh.querySelectorAll('.thumb').forEach(t=>t.onclick=()=>openDetail(num,+t.dataset.i));
+  if(l.arts.length>1 && !ALT) loadAlt().then(()=>{ if(!sh.hidden && document.getElementById('d-name')?.textContent===l.name) openDetail(num,artIdx); });
+  if(artIdx===0) document.getElementById('closeD').focus();
+}
+function popBox(l){
+  const p=l.popularity, f=META?META.format:'current';
+  if(!p) return `<div class="box"><h4>Tournament popularity</h4><span class="hint">No top placings at major ${f}-format tournaments yet. That can mean a newer, niche or casual Leader.</span></div>`;
+  return `<div class="box"><h4>Tournament popularity</h4><div class="popbig"><b>${p.share}%</b><span>of top placings at major ${f}-format tournaments · #${p.rank} of ${META.leaders_ranked} Leaders · ${p.placings} placings</span></div>
+    <a class="ghost" href="${p.url}" target="_blank" rel="noopener">See winning decklists on Limitless</a></div>`;
+}
+function closeDetail(){ document.getElementById('sheet').hidden=true; document.getElementById('scrim').hidden=true; document.body.style.overflow=''; }
+document.getElementById('scrim').onclick=closeDetail;
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeDetail(); });
+document.getElementById('q').oninput=e=>{S.q=e.target.value; renderGrid();};
+document.getElementById('sort').onchange=e=>{S.sort=e.target.value; renderGrid();};
+function renderAll(){ renderFormats(); renderColors(); renderChosen(); renderGrid(); }
+
+Promise.all([fetch('leaders.json').then(r=>r.json()), fetch('art-base.json').then(r=>r.json())]).then(([d,a])=>{
+  META=d.meta; LEADERS=d.leaders; const l=LEADERS; ART=a;
+  document.getElementById('foot').insertAdjacentHTML('beforeend',` Tournament popularity: share of ${META.total_placings} top placings at major tournaments in the ${META.format} format, from <a href="${META.source}" target="_blank" rel="noopener">Limitless TCG</a> (as of Nov 5, 2026).`);
+  document.getElementById('stamp').textContent=`${l.length} Leaders · data Nov 5, 2026`;
+  renderAll(); window.dispatchEvent(new Event('gldb:ready'));
+}).catch(()=>{ document.getElementById('grid').innerHTML='<div class="empty">Card data could not load. Refresh the page to try again.</div>'; });
+renderFormats();
+</script>
+<style>
+/* ---------- Step 4: deck builder ---------- */
+.mydecks{display:flex;flex-direction:column;gap:10px}
+.dlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.dcard{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;gap:10px;min-width:0}
+.dcard img{width:48px;border-radius:5px;flex:none;align-self:flex-start}
+.dcard .dt{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.dcard b{font-weight:700;overflow-wrap:anywhere}
+.dcard small{color:var(--muted);font-size:.8rem;font-variant-numeric:tabular-nums}
+.dact{display:flex;gap:10px;flex-wrap:wrap;font-size:.85rem}
+.lchips{display:flex;gap:4px;flex-wrap:wrap}
+.lchip{font-size:.68rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:1px 7px;white-space:nowrap}
+.lchip.y{background:var(--ok-bg);color:var(--ok)}
+.lchip.n{background:var(--danger-bg);color:var(--danger)}
+.btn{all:unset;box-sizing:border-box;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:8px;padding:7px 12px;font-size:.9rem;font-weight:700;text-align:center}
+.btn:hover{border-color:var(--muted)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.btn.danger{color:var(--danger);border-color:var(--danger)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.builder{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,400px);gap:18px;align-items:start}
+@media (max-width:920px){.builder{grid-template-columns:1fr}}
+.browser{display:flex;flex-direction:column;gap:10px;min-width:0}
+.filters{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.frow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.frow > .lab{font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);min-width:64px}
+.fchip{all:unset;box-sizing:border-box;cursor:pointer;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:.85rem;background:var(--bg);font-variant-numeric:tabular-nums}
+.fchip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.filters input,.filters select{font:inherit;font-size:.9rem;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:0}
+.filters input[type=search]{flex:1 1 200px}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.ctile{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.ctile.off .cimg img{filter:grayscale(1);opacity:.55}
+.cimg{all:unset;cursor:pointer;display:block;position:relative;aspect-ratio:600/838;background:var(--sunk)}
+.cimg img{width:100%;height:100%;object-fit:cover;display:block}
+.cimg .badges{inset:4px 4px auto 4px}
+.ph{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:8px;text-align:center;font-size:.8rem;color:var(--muted)}
+.cmeta{padding:6px 8px;display:flex;flex-direction:column;gap:4px}
+.cmeta .n{font-size:.82rem;font-weight:700;line-height:1.2;overflow-wrap:anywhere}
+.cmeta .s{font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.qty{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.qbtn{all:unset;box-sizing:border-box;cursor:pointer;width:30px;height:30px;border-radius:7px;display:grid;place-items:center;font-weight:700;font-size:1.1rem;background:var(--sunk)}
+.qbtn.add{background:var(--accent);color:var(--accent-fg)}
+.qbtn[disabled]{opacity:.35;cursor:not-allowed}
+.qn{font-family:var(--display);font-size:1.2rem;font-variant-numeric:tabular-nums;min-width:1.5em;text-align:center}
+.more{align-self:center}
+.panel{position:sticky;top:calc(env(safe-area-inset-top,0px) + 10px);background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;max-height:calc(100vh - 20px);min-width:0}
+@media (max-width:920px){.panel{position:static;max-height:none}}
+.phead{padding:12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.phead input{font:inherit;font-weight:700;font-size:1.05rem;background:transparent;color:var(--fg);border:1px solid transparent;border-radius:6px;padding:4px 6px;margin:-4px -6px;min-width:0;width:100%}
+.phead input:hover,.phead input:focus{border-color:var(--line)}
+.prow{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.cnt{font-family:var(--display);font-size:1.6rem;font-weight:800;font-variant-numeric:tabular-nums}
+.cnt.ok{color:var(--ok)} .cnt.bad{color:var(--danger)}
+.meter{height:6px;background:var(--sunk);border-radius:3px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent)}
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tab{all:unset;cursor:pointer;flex:1;text-align:center;padding:9px 4px;font-weight:700;font-size:.88rem;color:var(--muted);border-bottom:3px solid transparent}
+.tab[aria-selected="true"]{color:var(--fg);border-color:var(--accent)}
+.pbody{overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:12px;min-height:120px}
+.issues{display:flex;flex-direction:column;gap:6px}
+.issue{font-size:.85rem;border-radius:6px;padding:6px 8px}
+.issue.e{background:var(--danger-bg);color:var(--danger)}
+.issue.w{background:var(--warn-bg);color:var(--warn)}
+.grp h5{margin:0 0 4px;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between}
+.drow{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line)}
+.drow:last-child{border-bottom:0}
+.drow .mini{display:flex;align-items:center;gap:2px}
+.drow .mini .qbtn{width:24px;height:24px;font-size:.95rem}
+.drow .mini .qn{font-size:1rem;min-width:1.2em}
+.costpill{font-family:var(--display);font-weight:800;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:.85rem;color:#fff;background:var(--c-black)}
+.drow .nm{all:unset;cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.9rem}
+.drow .nm small{color:var(--muted);font-variant-numeric:tabular-nums}
+.drow .flag{color:var(--danger);font-weight:700;font-size:.8rem}
+.pfoot{padding:10px 12px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap}
+.pfoot .btn{flex:1 1 auto}
+.saved{font-size:.78rem;color:var(--muted)}
+/* stats */
+.sgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.sbox{background:var(--bg);border-radius:8px;padding:6px 8px}
+.sbox small{display:block;font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.sbox b{font-family:var(--display);font-size:1.35rem;font-variant-numeric:tabular-nums}
+.curve{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:3px;align-items:end;height:110px;padding-top:14px}
+.bar{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:2px}
+.bar i{display:block;width:100%;background:var(--accent);border-radius:3px 3px 0 0;min-height:1px}
+.bar span{font-size:.7rem;font-variant-numeric:tabular-nums;color:var(--fg)}
+.axis{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:3px;font-size:.7rem;color:var(--muted);text-align:center;border-top:1px solid var(--line);padding-top:2px}
+.explain{font-size:.82rem;color:var(--muted);margin:2px 0 0}
+.sec h6{margin:0 0 4px;font-size:.8rem;font-weight:700}
+.hbar{display:grid;grid-template-columns:118px minmax(0,1fr) 32px;gap:6px;align-items:center;font-size:.82rem}
+.hbar .tr{height:10px;background:var(--sunk);border-radius:5px;overflow:hidden}
+.hbar .tr i{display:block;height:100%;background:var(--accent)}
+.hbar b{font-variant-numeric:tabular-nums;text-align:right}
+/* test hand */
+.hand{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+.hand.many{grid-template-columns:repeat(6,minmax(0,1fr))}
+.hand img,.hand .ph2{width:100%;aspect-ratio:600/838;border-radius:5px;display:block;background:var(--sunk);object-fit:cover}
+.hand .ph2{display:flex;align-items:center;justify-content:center;font-size:.65rem;text-align:center;padding:2px;color:var(--muted)}
+.odds{display:flex;flex-direction:column;gap:4px}
+.odds div{display:flex;justify-content:space-between;gap:8px;font-size:.85rem}
+.odds b{font-variant-numeric:tabular-nums}
+.ta{width:100%;min-height:200px;font:13px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px}
+.confirm{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:.85rem}
+.mbar{position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--fg);color:var(--bg);display:none;justify-content:space-between;align-items:center;gap:10px;padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.mbar button{all:unset;cursor:pointer;font-weight:700;text-decoration:underline}
+@media (max-width:920px){.mbar.on{display:flex}}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(70px + env(safe-area-inset-bottom,0px));z-index:30;background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:.9rem;box-shadow:var(--shadow)}
+</style>
+
+<script>
+/* =========================================================
+   Deck storage. Everything that saves or loads decks goes through DeckStore.
+   Today it uses this device's browser storage (LocalDeckStore).
+   To add accounts later, write a CloudDeckStore with the same four async
+   methods (list, get, save, remove) backed by Supabase/Firebase, and swap
+   the single line `const DeckStore = LocalDeckStore;` below.
+   ========================================================= */
+const LocalDeckStore = {
+  KEY: 'gldb.decks.v1',
+  _read(){ try{ return JSON.parse(localStorage.getItem(this.KEY)||'[]'); }catch(e){ return []; } },
+  _write(a){ try{ localStorage.setItem(this.KEY, JSON.stringify(a)); return true; }catch(e){ return false; } },
+  async list(){ return this._read().sort((a,b)=>b.updated.localeCompare(a.updated)); },
+  async get(id){ return this._read().find(d=>d.id===id)||null; },
+  async save(deck){ const a=this._read(); const i=a.findIndex(d=>d.id===deck.id); deck.updated=new Date().toISOString(); if(i>=0)a[i]=deck; else a.push(deck); if(!this._write(a)) throw new Error('storage'); return deck; },
+  async remove(id){ this._write(this._read().filter(d=>d.id!==id)); },
+};
+const DeckStore = LocalDeckStore;
+const DRAFT_KEY='gldb.draft.v1';
+
+/* ---------- card data ---------- */
+let CARDS=[], CBY={}, PAIRS=[], DART={}; const artLoaded=new Set();
+const cardsReady = fetch('cards.json').then(r=>r.json()).then(d=>{ CARDS=d.cards; PAIRS=d.banned_pairs; CARDS.forEach(c=>CBY[c.n]=c); });
+function loadArtFor(colors){ return Promise.all(colors.filter(c=>!artLoaded.has(c)).map(c=>{ artLoaded.add(c); return fetch(`art-${c}.json`).then(r=>r.json()).then(j=>Object.assign(DART,j)).catch(()=>{}); })); }
+const leaderBy = n => LEADERS.find(l=>l.num===n);
+const FMT_SHORT={standard:'Std',extra:'Extra',casual:'Casual'};
+const newId = () => 'd'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+/* ---------- builder state ---------- */
+const B = { deck:null, dirty:false, tab:'list', f:{q:'',cat:'all',cost:new Set(),ctr:'any',kw:'',types:false,sort:'cost',showAll:false}, limit:60, hand:null };
+
+const LEADER_RULES = {
+  'OP12-001': {msg:'Rayleigh: no cards that cost 5 or more.', bad:c=>c.cost!=null && c.cost>=5},
+  'OP13-079': {msg:'Imu: no Events that cost 2 or more.', bad:c=>c.c==='E' && c.cost>=2},
+  'P-117':    {msg:'Nami (P-117): only {East Blue} type cards.', bad:c=>!c.ty.includes('East Blue')},
+};
+const maxCopies = c => c.unl ? 50 : 4;
+
+function validate(deck){
+  const L=leaderBy(deck.leader); const out={total:0, basic:[], ban:[], std:[], warn:[], cardFlags:{}};
+  if(!L){ out.basic.push('Pick a Leader.'); return finish(out); }
+  const flag=(n,m)=>{(out.cardFlags[n]=out.cardFlags[n]||[]).push(m);};
+  const rule=LEADER_RULES[L.num];
+  for(const [n,q] of Object.entries(deck.cards)){
+    const c=CBY[n]; if(!c||!q) continue; out.total+=q;
+    if(q>maxCopies(c)){ out.basic.push(`${c.nm} (${n}): ${q} copies. The limit is 4.`); flag(n,'Over 4 copies'); }
+    if(!c.col.some(x=>L.colors.includes(x))){ out.basic.push(`${c.nm} (${n}) is ${c.col.join('/')}, which doesn't match your Leader's colors.`); flag(n,'Wrong color'); }
+    if(rule && rule.bad(c)){ out.basic.push(`${c.nm} (${n}) breaks your Leader's rule. ${rule.msg}`); flag(n,'Breaks Leader rule'); }
+    if(c.ban){ out.ban.push(`${c.nm} (${n}) is banned.`); flag(n,'Banned'); }
+    if(!c.std){ out.std.push(`${c.nm} (${n}) isn't legal in Standard (block ${c.bk}).`); flag(n,'Not in Standard'); }
+    else if(c.rot) out.warn.push(n);
+  }
+  if(out.total!==50) out.basic.unshift(out.total<50?`Deck has ${out.total} cards. Add ${50-out.total} more to reach 50.`:`Deck has ${out.total} cards. Remove ${out.total-50} to get to 50.`);
+  if(L.banned) out.ban.unshift(`Your Leader ${L.name} (${L.num}) is banned.`);
+  if(!L.legal.standard && !L.banned) out.std.unshift(`Your Leader ${L.name} (${L.num}) isn't legal in Standard.`);
+  const inDeck=n=>n===L.num || (deck.cards[n]>0);
+  PAIRS.forEach(([a,b])=>{ if(inDeck(a)&&inDeck(b)){ const na=(CBY[a]||leaderBy(a)||{}).nm||(leaderBy(a)||{}).name, nb=(CBY[b]||leaderBy(b)||{}).nm||(leaderBy(b)||{}).name; out.ban.push(`${na} (${a}) and ${nb} (${b}) are a banned pair and can't be in the same deck.`); [a,b].forEach(x=>CBY[x]&&flag(x,'Banned pair')); }});
+  return finish(out);
+  function finish(o){ o.legal={casual:!o.basic.length, extra:!o.basic.length&&!o.ban.length, standard:!o.basic.length&&!o.ban.length&&!o.std.length}; return o; }
+}
+
+/* ---------- start / load ---------- */
+async function setLeader(num){
+  await cardsReady;
+  const L=leaderBy(num);
+  if(!B.deck){ B.deck={id:newId(), name:`${L.name} deck`, leader:num, format:S.format, cards:{}, created:new Date().toISOString(), updated:''}; }
+  else if(B.deck.leader!==num){ B.deck.leader=num; if(/ deck$/.test(B.deck.name)) B.deck.name=`${L.name} deck`; }
+  B.deck.format=S.format; B.dirty=true; B.limit=60; B.hand=null;
+  document.getElementById('step4').hidden=false;
+  await loadArtFor(L.colors); saveDraft(); renderBuilder();
+}
+function saveDraft(){ try{ localStorage.setItem(DRAFT_KEY, JSON.stringify({deck:B.deck, dirty:B.dirty})); }catch(e){} }
+async function openDeck(deck){
+  await cardsReady; B.deck=JSON.parse(JSON.stringify(deck)); B.dirty=false; B.hand=null;
+  S.format=deck.format||'standard'; S.chosen=deck.leader; const L=leaderBy(deck.leader);
+  S.color = L.colors.length===2?'Two-Color':L.colors[0]; S.pair = L.colors.length===2?pairKey(L.colors):null;
+  renderAll(); document.getElementById('step4').hidden=false; await loadArtFor(L.colors); saveDraft(); renderBuilder();
+  document.getElementById('step4').scrollIntoView({behavior:'smooth'});
+}
+
+/* ---------- browser ---------- */
+function leaderTypeMatch(c,L){ return c.ty.some(t=>L.types.includes(t)) || L.types.some(t=>(c.ef||'').includes(`{${t}}`)); }
+function filtered(){
+  const L=leaderBy(B.deck.leader), f=B.f, q=f.q.trim().toLowerCase(), fmt=S.format;
+  let hiddenCount=0;
+  let list=CARDS.filter(c=>{
+    if(!c.col.some(x=>L.colors.includes(x))) return false;
+    if(f.cat!=='all' && c.c!==f.cat) return false;
+    if(f.cost.size && !f.cost.has(Math.min(c.cost??0,10))) return false;
+    if(f.ctr!=='any' && String(c.ct??0)!==f.ctr) return false;
+    if(f.kw && !c.kw.includes(f.kw)) return false;
+    if(f.types && !leaderTypeMatch(c,L)) return false;
+    if(q && !(c.nm+' '+c.n+' '+c.ty.join(' ')+' '+(c.ef||'')+' '+(c.tr||'')).toLowerCase().includes(q)) return false;
+    const rule=LEADER_RULES[L.num];
+    const legalHere = fmt==='casual' || (fmt==='extra' ? true : c.std);
+    if(!legalHere || (rule && rule.bad(c))){ if(!f.showAll){ hiddenCount++; return false; } }
+    return true;
+  });
+  const s={cost:(a,b)=>(a.cost??0)-(b.cost??0)||a.n.localeCompare(b.n), name:(a,b)=>a.nm.localeCompare(b.nm), newest:(a,b)=>b.n.localeCompare(a.n), price:(a,b)=>(b.p??0)-(a.p??0), indeck:(a,b)=>(B.deck.cards[b.n]||0)-(B.deck.cards[a.n]||0)||(a.cost??0)-(b.cost??0)}[f.sort];
+  list.sort(s); return {list, hiddenCount};
+}
+function cardBadges(c){
+  const o=[]; const casual=S.format==='casual';
+  if(c.ban && !casual) o.push('<span class="b b-ban">Banned</span>');
+  else if(PAIRS.some(p=>p.includes(c.n)) && !casual) o.push('<span class="b b-pair">Banned pair</span>');
+  if(S.format==='standard' && !c.std) o.push('<span class="b b-rot">Not in Standard</span>');
+  else if(S.format==='standard' && c.rot) o.push('<span class="b b-rot">Rotates 2027</span>');
+  if(c.unl) o.push('<span class="b b-rule">Any number</span>');
+  return o.join('');
+}
+function renderBrowser(){
+  const el=document.getElementById('cards'); const {list,hiddenCount}=filtered(); const L=leaderBy(B.deck.leader);
+  const fmtName=FORMATS.find(f=>f.k===S.format).name; const rule=LEADER_RULES[L.num];
+  document.getElementById('cnote').innerHTML = `${list.length} card${list.length===1?'':'s'} match.` +
+    (hiddenCount&&!B.f.showAll?` ${hiddenCount} hidden because they're not allowed in ${fmtName}${rule?' or by your Leader\'s rule':''}. <button class="ghost" id="cshow">Show them</button>`:'') +
+    (B.f.showAll?` <button class="ghost" id="cshow">Hide cards you can't use</button>`:'');
+  const cs=document.getElementById('cshow'); if(cs) cs.onclick=()=>{B.f.showAll=!B.f.showAll; renderBrowser();};
+  const shown=list.slice(0,B.limit);
+  el.innerHTML = shown.length ? shown.map(c=>{
+    const q=B.deck.cards[c.n]||0; const blocked=(c.ban&&S.format!=='casual')||(S.format==='standard'&&!c.std)||(rule&&rule.bad(c));
+    const img=DART[c.img];
+    return `<div class="ctile ${blocked?'off':''}" data-n="${c.n}">
+      <button class="cimg" data-open="${c.n}" aria-label="Details for ${esc(c.nm)}">${img?`<img loading="lazy" alt="" src="${img}">`:`<span class="ph"><b>${esc(c.nm)}</b>${c.n}</span>`}<div class="badges">${cardBadges(c)}</div></button>
+      <div class="cmeta"><span class="n">${esc(c.nm)}</span>
+        <span class="s">${c.n} · ${c.c==='C'?'Character':c.c==='E'?'Event':'Stage'} · Cost ${c.cost??0}${c.c==='C'?` · ${c.pw/1000}K`:''}${c.ct?` · +${c.ct/1000}K ctr`:''}</span>
+        <div class="qty"><button class="qbtn" data-d="-1" ${q?'':'disabled'} aria-label="Remove one ${esc(c.nm)}">−</button><span class="qn">${q}</span>
+        <button class="qbtn add" data-d="1" ${q>=maxCopies(c)||blocked?'disabled':''} aria-label="Add one ${esc(c.nm)}">+</button></div></div></div>`;}).join('')
+    : `<div class="empty">No cards match these filters.</div>`;
+  if(list.length>B.limit) el.insertAdjacentHTML('beforeend',`<div class="empty" style="grid-column:1/-1;padding:12px"><button class="btn" id="morec">Show ${Math.min(60,list.length-B.limit)} more of ${list.length-B.limit}</button></div>`);
+  const m=document.getElementById('morec'); if(m) m.onclick=()=>{B.limit+=60; renderBrowser();};
+}
+function renderFilters(){
+  const f=B.f, el=document.getElementById('filters'); const L=leaderBy(B.deck.leader);
+  const kws=['Blocker','Rush','Trigger','Counter Event','On Play','When Attacking','On K.O.','Activate: Main','Draw','Removal','Double Attack','Banish','Unblockable'];
+  el.innerHTML=`
+   <div class="frow"><input type="search" id="cq" placeholder="Search name, type or effect" value="${esc(f.q)}" aria-label="Search cards">
+     <select id="csort" aria-label="Sort cards"><option value="cost">Sort: cost</option><option value="newest">Newest</option><option value="name">Name</option><option value="price">Price (high first)</option><option value="indeck">In deck first</option></select></div>
+   <div class="frow"><span class="lab">Type</span>${[['all','All'],['C','Characters'],['E','Events'],['S','Stages']].map(([k,t])=>`<button class="fchip" data-cat="${k}" aria-pressed="${f.cat===k}">${t}</button>`).join('')}</div>
+   <div class="frow"><span class="lab">Cost</span>${[...Array(11).keys()].map(i=>`<button class="fchip" data-cost="${i}" aria-pressed="${f.cost.has(i)}">${i===10?'10+':i}</button>`).join('')}</div>
+   <div class="frow"><span class="lab">Counter</span>${[['any','Any'],['0','None'],['1000','+1000'],['2000','+2000']].map(([k,t])=>`<button class="fchip" data-ctr="${k}" aria-pressed="${f.ctr===k}">${t}</button>`).join('')}</div>
+   <div class="frow"><span class="lab">Ability</span><select id="ckw" aria-label="Ability"><option value="">Any ability</option>${kws.map(k=>`<option ${f.kw===k?'selected':''}>${k}</option>`).join('')}</select>
+     <button class="fchip" id="ctypes" aria-pressed="${f.types}" title="${esc(L.types.join(', '))}">Matches Leader's types</button></div>`;
+  document.getElementById('csort').value=f.sort;
+  const re=()=>{B.limit=60; renderFilters(); renderBrowser();};
+  el.querySelector('#cq').oninput=e=>{f.q=e.target.value; B.limit=60; renderBrowser();};
+  el.querySelector('#csort').onchange=e=>{f.sort=e.target.value; renderBrowser();};
+  el.querySelector('#ckw').onchange=e=>{f.kw=e.target.value; re();};
+  el.querySelector('#ctypes').onclick=()=>{f.types=!f.types; re();};
+  el.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{f.cat=b.dataset.cat; re();});
+  el.querySelectorAll('[data-cost]').forEach(b=>b.onclick=()=>{const i=+b.dataset.cost; f.cost.has(i)?f.cost.delete(i):f.cost.add(i); re();});
+  el.querySelectorAll('[data-ctr]').forEach(b=>b.onclick=()=>{f.ctr=b.dataset.ctr; re();});
+}
+function change(n,d){
+  const c=CBY[n]; const q=(B.deck.cards[n]||0)+d;
+  if(q<=0) delete B.deck.cards[n]; else B.deck.cards[n]=Math.min(q,maxCopies(c));
+  B.dirty=true; B.hand=null; saveDraft(); renderBrowser(); renderPanel();
+}
+document.addEventListener('click',e=>{
+  const qb=e.target.closest('.qbtn[data-d]'); if(qb && !qb.disabled){ const n=qb.closest('[data-n]').dataset.n; change(n,+qb.dataset.d); return; }
+  const op=e.target.closest('[data-open]'); if(op){ openCard(op.dataset.open); }
+});
+
+/* ---------- card detail ---------- */
+function openCard(n){
+  const c=CBY[n]; const sh=document.getElementById('sheet'); const q=B.deck?.cards[n]||0;
+  const legal={standard:c.std&&!c.ban, extra:!c.ban, casual:true};
+  sh.innerHTML=`<div class="sheet-top"><div><h3 id="d-name">${esc(c.nm)}</h3><div class="sub">${n} · ${c.col.join(' / ')} ${c.c==='C'?'Character':c.c==='E'?'Event':'Stage'} · ${esc(c.st)} · Block ${c.bk} · ${c.r}</div></div><button class="x" id="closeD" aria-label="Close">×</button></div>
+   <div class="dgrid"><div class="bigart">${DART[c.img]?`<img alt="${esc(c.nm)} card art" src="${DART[c.img]}">`:''}<div class="artnote">${c.p!=null?`About $${c.p.toFixed(2)} on TCGplayer`:''}</div></div>
+   <div class="dcol">
+    ${c.ban?'<div class="alert a-ban"><b>Banned</b>Can\'t be used in Standard or Extra Regulation.</div>':''}
+    ${PAIRS.filter(p=>p.includes(n)).map(p=>{const o=p[0]===n?p[1]:p[0]; return `<div class="alert a-ban"><b>Banned pair</b>Can't be in the same deck as ${o}.</div>`}).join('')}
+    ${c.unl?'<div class="alert a-rule"><b>Deck rule</b>You can include any number of copies of this card.</div>':''}
+    <div class="stats"><div class="stat"><small>Cost</small><b>${c.cost??0}</b></div><div class="stat"><small>Power</small><b>${c.pw!=null?c.pw.toLocaleString():'—'}</b></div><div class="stat"><small>Counter</small><b>${c.ct?'+'+c.ct.toLocaleString():'—'}</b></div></div>
+    <div class="box"><h4>Effect</h4><p class="effect">${c.ef?fmtEffect(c.ef):'No effect.'}</p>${c.tr?`<h4 style="margin-top:10px">Trigger</h4><p class="effect">${fmtEffect(c.tr)}</p>`:''}</div>
+    <div class="box"><h4>Types · Attribute</h4><div class="typechips">${c.ty.map(t=>`<span>${esc(t)}</span>`).join('')}${c.at?`<span>${esc(c.at)}</span>`:''}</div></div>
+    <div class="box"><h4>Legal in</h4><div class="legal">${FORMATS.map(f=>`<div class="lg ${legal[f.k]?'y':'n'}"><b>${legal[f.k]?'Legal':'Not legal'}</b>${f.name}</div>`).join('')}</div></div>
+    ${B.deck?`<div class="box" data-n="${n}"><h4>In your deck</h4><div class="qty" style="max-width:160px"><button class="qbtn" data-d="-1" ${q?'':'disabled'}>−</button><span class="qn" id="sheetq">${q}</span><button class="qbtn add" data-d="1" ${q>=maxCopies(c)?'disabled':''}>+</button></div></div>`:''}
+   </div></div>`;
+  sh.hidden=false; document.getElementById('scrim').hidden=false; document.body.style.overflow='hidden';
+  document.getElementById('closeD').onclick=closeDetail; document.getElementById('closeD').focus();
+  sh.querySelectorAll('.qbtn').forEach(b=>b.addEventListener('click',()=>setTimeout(()=>{ if(!sh.hidden) openCard(n); },0)));
+}
+
+/* ---------- deck panel ---------- */
+function renderPanel(){
+  const d=B.deck, L=leaderBy(d.leader), v=validate(d);
+  document.getElementById('dname').value=d.name;
+  const cnt=document.getElementById('dcount'); cnt.textContent=`${v.total}/50`; cnt.className='cnt '+(v.total===50?'ok':v.total>50?'bad':'');
+  document.getElementById('dmeter').style.width=Math.min(100,v.total*2)+'%';
+  document.getElementById('dlegal').innerHTML=FORMATS.map(f=>`<span class="lchip ${v.legal[f.k]?'y':'n'}" title="${f.name}">${v.legal[f.k]?'✓':'✗'} ${f.name}</span>`).join('');
+  document.getElementById('dsaved').textContent = B.dirty?'Unsaved changes':'Saved on this device';
+  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.tab===B.tab));
+  const body=document.getElementById('pbody');
+  if(B.tab==='list') body.innerHTML=listHTML(d,L,v);
+  if(B.tab==='stats') body.innerHTML=statsHTML(d,L);
+  if(B.tab==='hand') body.innerHTML=handHTML(d,L);
+  if(B.tab==='compare') body.innerHTML=compareHTML(d,L);
+  if(B.tab==='matchups') body.innerHTML=matchupsHTML(d,L);
+  if(B.tab==='hand'){ const dr=document.getElementById('drawh'); if(dr) dr.onclick=()=>{drawHand(); renderPanel();}; const mu=document.getElementById('mull'); if(mu) mu.onclick=()=>{drawHand(true); renderPanel();}; const nx=document.getElementById('nextc'); if(nx) nx.onclick=()=>{B.hand.turn++; renderPanel();}; }
+  const mb=document.getElementById('mbar'); mb.classList.add('on'); document.getElementById('mbtext').textContent=`${L.name} · ${v.total}/50 cards${v.legal[S.format]?'':' · has issues'}`;
+}
+function listHTML(d,L,v){
+  const issues=[...v.basic.map(m=>['e',m]), ...(S.format!=='casual'?v.ban.map(m=>['e',m]):v.ban.map(m=>['w',m+' (fine in Casual)'])), ...(S.format==='standard'?v.std.map(m=>['e',m]):v.std.slice(0,3).map(m=>['w',m+' (fine in this format)']))];
+  const rows=Object.entries(d.cards).filter(([n,q])=>q>0&&CBY[n]).map(([n,q])=>({c:CBY[n],q}));
+  const groups=[['C','Characters'],['E','Events'],['S','Stages']].map(([k,t])=>({t,items:rows.filter(r=>r.c.c===k).sort((a,b)=>(a.c.cost??0)-(b.c.cost??0)||a.c.nm.localeCompare(b.c.nm))})).filter(g=>g.items.length);
+  const rule=LEADER_RULES[L.num];
+  return `<div class="issues">${rule?`<div class="issue w">${esc(rule.msg)}</div>`:''}${issues.slice(0,8).map(([k,m])=>`<div class="issue ${k}">${esc(m)}</div>`).join('')}${issues.length>8?`<div class="issue e">…and ${issues.length-8} more.</div>`:''}</div>
+   ${groups.length?groups.map(g=>`<div class="grp"><h5><span>${g.t}</span><span>${g.items.reduce((s,r)=>s+r.q,0)}</span></h5>${g.items.map(({c,q})=>`
+     <div class="drow" data-n="${c.n}"><span class="mini"><button class="qbtn" data-d="-1" aria-label="Remove one">−</button><span class="qn">${q}</span><button class="qbtn add" data-d="1" ${q>=maxCopies(c)?'disabled':''} aria-label="Add one">+</button></span>
+       <span class="costpill" style="background:${cvar(c.col[0])}">${c.cost??0}</span>
+       <button class="nm" data-open="${c.n}">${esc(c.nm)} <small>${c.n}</small></button>
+       <span class="flag">${(v.cardFlags[c.n]||[]).filter(x=>S.format!=='casual'||!/Banned|Standard/.test(x)).filter(x=>S.format==='standard'||x!=='Not in Standard').length?'!':''}</span></div>`).join('')}</div>`).join('')
+   :`<p class="explain">Your deck is empty. Tap <b>+</b> on cards to add them. A deck needs exactly 50 cards, with up to 4 copies of each card number.</p>`}`;
+}
+function statsHTML(d){
+  const rows=Object.entries(d.cards).map(([n,q])=>({c:CBY[n],q})).filter(r=>r.c&&r.q);
+  const tot=rows.reduce((s,r)=>s+r.q,0); if(!tot) return `<p class="explain">Add cards to see your deck's stats.</p>`;
+  const sum=f=>rows.reduce((s,r)=>s+(f(r.c)?r.q:0),0);
+  const curve=[...Array(11)].map((_,i)=>sum(c=>Math.min(c.cost??0,10)===i)); const mx=Math.max(...curve,1);
+  const ch=sum(c=>c.c==='C'), ev=sum(c=>c.c==='E'), stg=sum(c=>c.c==='S');
+  const c1=sum(c=>c.ct===1000), c2=sum(c=>c.ct===2000), ctrTotal=rows.reduce((s,r)=>s+(r.c.ct||0)*r.q,0);
+  const avg=(rows.reduce((s,r)=>s+(r.c.cost??0)*r.q,0)/tot).toFixed(1);
+  const price=rows.reduce((s,r)=>s+(r.c.p||0)*r.q,0);
+  const kw=k=>sum(c=>c.kw.includes(k));
+  const hb=(lab,n,max=tot)=>`<div class="hbar"><span>${lab}</span><span class="tr"><i style="width:${n/max*100}%"></i></span><b>${n}</b></div>`;
+  return `<div class="sgrid"><div class="sbox"><small>Characters</small><b>${ch}</b></div><div class="sbox"><small>Events</small><b>${ev}</b></div><div class="sbox"><small>Stages</small><b>${stg}</b></div>
+     <div class="sbox"><small>Avg cost</small><b>${avg}</b></div><div class="sbox"><small>Counter total</small><b>${(ctrTotal/1000).toFixed(0)}K</b></div><div class="sbox"><small>Est. price</small><b>$${price.toFixed(0)}</b></div></div>
+   <div class="sec"><h6>Cost curve</h6><div class="curve">${curve.map(n=>`<div class="bar"><span>${n||''}</span><i style="height:${n/mx*90}%"></i></div>`).join('')}</div>
+     <div class="axis">${curve.map((_,i)=>`<span>${i===10?'10+':i}</span>`).join('')}</div>
+     <p class="explain">How many cards you have at each cost. You get 1 more DON!! each turn (2 if you go second on turn 1), so cheap cards let you act early and expensive ones are your late-game finishers.</p></div>
+   <div class="sec"><h6>Defense</h6>${hb('+1000 counter',c1)}${hb('+2000 counter',c2)}${hb('Counter Events',kw('Counter Event'))}${hb('Blockers',kw('Blocker'))}${hb('Triggers',kw('Trigger'))}
+     <p class="explain">Counter cards can be discarded from your hand to add power when you're attacked. Blockers can take a hit for your Leader. Triggers can activate when one of your Life cards is revealed after you take damage.</p></div>
+   <div class="sec"><h6>Offense &amp; card flow</h6>${hb('Rush',kw('Rush'))}${hb('On Play',kw('On Play'))}${hb('Removal',kw('Removal'))}${hb('Draw',kw('Draw'))}
+     <p class="explain">Rush cards can attack the turn they're played. Removal and draw are counted from card text, so treat them as a rough guide.</p></div>`;
+}
+function shuffled(d){ const a=[]; Object.entries(d.cards).forEach(([n,q])=>{for(let i=0;i<q;i++)a.push(n);}); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function drawHand(mull){ const deck=shuffled(B.deck); B.hand={deck, mull:!!mull, turn:0}; }
+function choose(n,k){ if(k<0||k>n) return 0; let r=1; for(let i=1;i<=k;i++) r=r*(n-k+i)/i; return r; }
+function pAtLeast1(K,N=50,n=5){ return K<=0?0:1-choose(N-K,n)/choose(N,n); }
+function handHTML(d,L){
+  const tot=Object.values(d.cards).reduce((a,b)=>a+b,0);
+  if(tot<5) return `<p class="explain">Add at least 5 cards to draw a test hand.</p>`;
+  const card=n=>{const c=CBY[n]; return DART[c.img]?`<img src="${DART[c.img]}" alt="${esc(c.nm)}" title="${esc(c.nm)}" data-open="${n}">`:`<span class="ph2" data-open="${n}">${esc(c.nm)}</span>`;};
+  let hand='';
+  if(B.hand){ const h=B.hand.deck.slice(0,5+B.hand.turn); hand=`<div class="hand ${h.length>5?'many':''}">${h.map(card).join('')}</div>
+    <p class="explain">${B.hand.mull?'After your one mulligan. ':''}Your ${L.life} Life cards come off the top of the deck next. ${B.hand.turn?`Drawn ${B.hand.turn} more card${B.hand.turn>1?'s':''}.`:''}</p>
+    <div class="dact">${!B.hand.mull?'<button class="btn" id="mull">Mulligan (redraw once)</button>':''}<button class="btn" id="nextc" ${5+B.hand.turn>=tot-L.life?'disabled':''}>Draw a card</button></div>`; }
+  const K=f=>Object.entries(d.cards).reduce((s,[n,q])=>s+(CBY[n]&&f(CBY[n])?q:0),0);
+  const N=tot; const pct=k=>Math.round(pAtLeast1(k,N,5)*100)+'%';
+  return `<div class="dact"><button class="btn pri" id="drawh">${B.hand?'Draw a new hand':'Draw a test hand'}</button></div>${hand}
+   <div class="sec"><h6>Chance your opening 5 cards include…</h6><div class="odds">
+     <div><span>A Character costing 2 or less</span><b>${pct(K(c=>c.c==='C'&&(c.cost??0)<=2))}</b></div>
+     <div><span>A Character costing 3–4</span><b>${pct(K(c=>c.c==='C'&&c.cost>=3&&c.cost<=4))}</b></div>
+     <div><span>A Blocker</span><b>${pct(K(c=>c.kw.includes('Blocker')))}</b></div>
+     <div><span>A +2000 counter card</span><b>${pct(K(c=>c.ct===2000))}</b></div>
+     <div><span>A Counter Event</span><b>${pct(K(c=>c.kw.includes('Counter Event')))}</b></div></div>
+     <p class="explain">Exact odds for a ${N}-card deck, before any mulligan. You may mulligan once: shuffle your hand back and draw 5 new cards.</p></div>`;
+}
+
+/* ---------- saved decks ---------- */
+async function renderMyDecks(){
+  const el=document.getElementById('dlist'); await cardsReady; const decks=await DeckStore.list();
+  document.getElementById('mydecks').hidden=!decks.length;
+  el.innerHTML=decks.map(d=>{ const L=leaderBy(d.leader); const v=validate(d);
+    return `<div class="dcard" data-id="${d.id}"><img alt="" src="${L?ART[L.arts[0].id]||'':''}"><div class="dt"><b>${esc(d.name)}</b>
+      <small>${L?esc(L.name)+' · '+L.num:''} · ${v.total}/50 · edited ${new Date(d.updated).toLocaleDateString()}</small>
+      <div class="lchips">${FORMATS.map(f=>`<span class="lchip ${v.legal[f.k]?'y':'n'}">${v.legal[f.k]?'✓':'✗'} ${f.name}</span>`).join('')}</div>
+      <div class="dact"><button class="ghost" data-act="open">Open</button><button class="ghost" data-act="dup">Duplicate</button><button class="ghost" data-act="del">Delete</button></div></div></div>`;}).join('');
+  el.querySelectorAll('[data-act]').forEach(b=>b.onclick=async()=>{
+    const id=b.closest('.dcard').dataset.id, d=await DeckStore.get(id);
+    if(b.dataset.act==='open') openDeck(d);
+    if(b.dataset.act==='dup'){ const c={...JSON.parse(JSON.stringify(d)), id:newId(), name:d.name+' (copy)', created:new Date().toISOString()}; await DeckStore.save(c); toast('Deck duplicated'); renderMyDecks(); }
+    if(b.dataset.act==='del'){ const act=b.parentElement; act.innerHTML=`<span class="confirm">Delete this deck? <button class="btn danger" data-y>Delete</button><button class="btn" data-n>Keep</button></span>`;
+      act.querySelector('[data-y]').onclick=async()=>{ await DeckStore.remove(id); if(B.deck&&B.deck.id===id) B.dirty=true; toast('Deck deleted'); renderMyDecks(); if(B.deck) renderPanel(); };
+      act.querySelector('[data-n]').onclick=()=>renderMyDecks(); }
+  });
+}
+function toast(m){ const t=document.createElement('div'); t.className='toast'; t.textContent=m; document.body.appendChild(t); setTimeout(()=>t.remove(),2200); }
+
+/* ---------- export / import ---------- */
+function exportText(d){ return [`1x${d.leader}`, ...Object.entries(d.cards).filter(([,q])=>q>0).sort((a,b)=>(CBY[a[0]].cost??0)-(CBY[b[0]].cost??0)||a[0].localeCompare(b[0])).map(([n,q])=>`${q}x${n}`)].join('\n'); }
+function parseDeck(txt){
+  const out={leader:null, cards:{}, unknown:[]};
+  txt.split(/\r?\n/).forEach(line=>{ const m=line.trim().match(/^(\d+)\s*x?\s*([A-Z]{1,5}\d{0,2}-\d{3})/i); if(!m) return; const q=+m[1], n=m[2].toUpperCase();
+    if(leaderBy(n)&&!out.leader){ out.leader=n; return; } if(CBY[n]) out.cards[n]=(out.cards[n]||0)+q; else out.unknown.push(n); });
+  return out;
+}
+function openText(mode){
+  const sh=document.getElementById('sheet');
+  sh.innerHTML=`<div class="sheet-top"><div><h3 id="d-name">${mode==='export'?'Export deck':'Import deck'}</h3><div class="sub">${mode==='export'?'This list works in OPTCG Simulator and most deck sites. The first line is your Leader.':'Paste a deck list with one card per line, like "4xOP01-016". Include your Leader as "1x…".'}</div></div><button class="x" id="closeD" aria-label="Close">×</button></div>
+   <div class="dcol"><textarea class="ta" id="tatext" ${mode==='export'?'readonly':''} spellcheck="false" aria-label="Deck list">${mode==='export'?esc(exportText(B.deck)):''}</textarea>
+   <div class="dact">${mode==='export'?'<button class="btn pri" id="copyt">Copy list</button>':'<button class="btn pri" id="doimp">Import as a new deck</button>'}</div><p class="explain" id="tamsg"></p></div>`;
+  sh.hidden=false; document.getElementById('scrim').hidden=false; document.body.style.overflow='hidden';
+  document.getElementById('closeD').onclick=closeDetail;
+  const ta=document.getElementById('tatext');
+  if(mode==='export') document.getElementById('copyt').onclick=()=>{ navigator.clipboard.writeText(ta.value).then(()=>{document.getElementById('tamsg').textContent='Copied.';},()=>{ta.select(); document.getElementById('tamsg').textContent='Select-all is on. Press Ctrl+C or Cmd+C to copy.';}); };
+  else document.getElementById('doimp').onclick=async()=>{ await cardsReady; const p=parseDeck(ta.value); const msg=document.getElementById('tamsg');
+    if(!p.leader){ msg.textContent='No Leader found. Add a line like "1xOP11-041" for your Leader.'; return; }
+    const L=leaderBy(p.leader); const d={id:newId(), name:`${L.name} deck (imported)`, leader:p.leader, format:S.format, cards:p.cards, created:new Date().toISOString(), updated:''};
+    closeDetail(); await openDeck(d); B.dirty=true; saveDraft(); renderPanel(); toast(p.unknown.length?`Imported. Skipped unknown cards: ${p.unknown.join(', ')}`:'Deck imported'); };
+}
+
+/* ---------- wiring ---------- */
+function renderBuilder(){ if(!B.deck) return; const L=leaderBy(B.deck.leader);
+  document.getElementById('b-leader').innerHTML=`Building for <b>${esc(L.name)}</b> (${L.num}, ${L.colors.join('/')}). Cards must share at least one color with your Leader.`;
+  renderFilters(); renderBrowser(); renderPanel(); }
+document.getElementById('dname').oninput=e=>{ B.deck.name=e.target.value||'Untitled deck'; B.dirty=true; saveDraft(); document.getElementById('dsaved').textContent='Unsaved changes'; };
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{B.tab=t.dataset.tab; renderPanel();});
+document.getElementById('dsave').onclick=async()=>{ try{ B.deck.format=S.format; await DeckStore.save(B.deck); B.dirty=false; saveDraft(); renderPanel(); renderMyDecks(); toast('Deck saved on this device'); }catch(e){ toast('Couldn\'t save. Your browser may be blocking storage for this page.'); } };
+document.getElementById('dnew').onclick=()=>{ B.deck=null; B.hand=null; S.chosen=null; document.getElementById('step4').hidden=true; document.getElementById('mbar').classList.remove('on'); try{localStorage.removeItem(DRAFT_KEY)}catch(e){} renderAll(); document.getElementById('h-format').scrollIntoView({behavior:'smooth'}); };
+document.getElementById('dexport').onclick=()=>openText('export');
+document.getElementById('dimport').onclick=()=>openText('import');
+document.getElementById('mbgo').onclick=()=>document.getElementById('deckpanel').scrollIntoView({behavior:'smooth'});
+
+window.addEventListener('gldb:leader', e=>setLeader(e.detail));
+window.addEventListener('gldb:format', ()=>{ if(B.deck){ B.limit=60; renderBrowser(); renderPanel(); } });
+window.addEventListener('gldb:ready', async ()=>{
+  renderMyDecks();
+  let dr=null; try{ dr=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null'); }catch(e){}
+  if(dr&&dr.deck&&leaderBy(dr.deck.leader)){ await openDeck(dr.deck); B.dirty=dr.dirty; renderPanel(); window.scrollTo(0,0); }
+});
+</script>
+<style>
+/* ---------- tournament results: win rates, matchups, winning-deck comparison ---------- */
+.wr{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.wr b{font-family:var(--display);font-size:2rem;font-variant-numeric:tabular-nums}
+.wr span{color:var(--muted);font-size:.88rem}
+.good{color:var(--ok)} .bad{color:var(--danger)} .mid{color:var(--fg)}
+.mlist{display:flex;flex-direction:column;gap:4px}
+.mrow{display:grid;grid-template-columns:28px minmax(0,1fr) 84px 44px;gap:8px;align-items:center;font-size:.86rem;padding:3px 0;border-bottom:1px solid var(--line)}
+.mrow:last-child{border-bottom:0}
+.mrow img{width:28px;border-radius:3px;display:block}
+.mrow .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mrow .nm small{color:var(--muted);font-variant-numeric:tabular-nums}
+.wbar{position:relative;height:12px;background:var(--danger-bg);border-radius:6px;overflow:hidden}
+.wbar i{position:absolute;inset:0 auto 0 0;background:var(--ok);opacity:.75}
+.wbar::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--fg);opacity:.5}
+.mrow b{text-align:right;font-variant-numeric:tabular-nums}
+.mrow.thin{opacity:.6}
+.cmp{display:flex;flex-direction:column;gap:6px}
+.crow{display:grid;grid-template-columns:minmax(0,1fr) 44px 92px;gap:8px;align-items:center;font-size:.86rem}
+.crow b{text-align:right;font-variant-numeric:tabular-nums}
+.range{position:relative;height:14px;background:var(--sunk);border-radius:7px}
+.range .band{position:absolute;top:3px;bottom:3px;background:var(--accent);opacity:.3;border-radius:4px}
+.range .avg{position:absolute;top:0;bottom:0;width:2px;background:var(--accent)}
+.range .you{position:absolute;top:1px;width:12px;height:12px;border-radius:50%;background:var(--fg);transform:translateX(-6px);border:2px solid var(--surface)}
+.legend{display:flex;gap:12px;font-size:.75rem;color:var(--muted);flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+.curve2{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:3px;align-items:end;height:90px}
+.curve2 .bar{position:relative}
+.curve2 .bar .tick{position:absolute;left:-2px;right:-2px;height:2px;background:var(--danger)}
+.core{display:flex;flex-direction:column;gap:3px}
+.core div{display:grid;grid-template-columns:minmax(0,1fr) 46px 64px;gap:6px;font-size:.84rem;align-items:center}
+.core button{all:unset;cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.core small{color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
+.core .st{font-size:.72rem;font-weight:700;text-align:right}
+.ex{display:flex;flex-direction:column;gap:6px}
+.ex div{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:.84rem;background:var(--bg);border-radius:6px;padding:6px 8px}
+.ex small{color:var(--muted)}
+.oppsel{font:inherit;font-size:.9rem;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;width:100%}
+.tab{font-size:.8rem;padding:9px 2px}
+</style>
+<script>
+let MD=null;
+const mdReady = fetch('meta.json').then(r=>r.json()).then(d=>{MD=d;}).catch(()=>{});
+const lname = n => { const l=leaderBy(n); return l?l.name:n; };
+const limg = n => { const l=leaderBy(n); return l?(ART[l.arts[0].id]||''):''; };
+const pctTxt = (w,l) => w+l ? Math.round(w/(w+l)*100)+'%' : '—';
+const MIN_GAMES = 8;
+function matchRows(L, opts={}){
+  const m=(MD&&MD.matchups[L])||{}; const share=k=>(MD.leaders[k]||{}).players||0;
+  return Object.entries(m).map(([o,[w,l,t]])=>({o,w,l,t,g:w+l+t,wr:w+l?w/(w+l):null,share:share(o)}));
+}
+function mrowHTML(r){ return `<div class="mrow ${r.g<MIN_GAMES?'thin':''}"><img alt="" src="${limg(r.o)}"><span class="nm">${esc(lname(r.o))} <small>${r.o}</small></span>
+  <span class="wbar" title="${r.w}-${r.l}${r.t?'-'+r.t:''}"><i style="width:${(r.wr??0)*100}%"></i></span><b class="${r.wr==null?'':r.wr>=.55?'good':r.wr<=.45?'bad':'mid'}">${pctTxt(r.w,r.l)}</b></div>`; }
+function leaderResultsBox(l){
+  if(!MD) return '';
+  const s=MD.leaders[l.num];
+  if(!s) return `<div class="box"><h4>Online tournament results</h4><span class="hint">No games recorded since ${MD.meta.from} in online Standard tournaments on Limitless.</span></div>`;
+  const rows=matchRows(l.num).filter(r=>r.g>=MIN_GAMES).sort((a,b)=>b.wr-a.wr);
+  const best=rows.slice(0,3), worst=rows.slice(-3).reverse().filter(r=>!best.includes(r));
+  return `<div class="box"><h4>Online tournament results</h4>
+    <div class="wr"><b class="${s.wr>=53?'good':s.wr<=47?'bad':''}">${s.wr??'—'}%</b><span>win rate · ${s.w}–${s.l}${s.t?'–'+s.t:''} in ${s.w+s.l+s.t} games · played by ${s.share}% of players</span></div>
+    ${rows.length?`<p class="explain" style="margin:8px 0 4px">Best matchups</p><div class="mlist">${best.map(mrowHTML).join('')}</div>
+    ${worst.length?`<p class="explain" style="margin:8px 0 4px">Toughest matchups</p><div class="mlist">${worst.map(mrowHTML).join('')}</div>`:''}`:'<p class="explain">Not enough games yet to show matchups.</p>'}
+    <p class="explain" style="margin-top:6px">${MD.meta.events} online events, ${MD.meta.from} to ${MD.meta.to}. Matchups need at least ${MIN_GAMES} games to show here.</p></div>`;
+}
+/* ---- deck panel: Compare tab ---- */
+function compareHTML(d,L){
+  if(!MD) return `<p class="explain">Loading tournament data…</p>`;
+  const P=MD.winning[L.num];
+  if(!P || P.lists<3) return `<p class="explain">There aren't enough winning decklists for ${esc(L.name)} (${L.num}) yet${P?` (only ${P.lists})`:''}. Comparisons need at least 3. Popular Leaders in the Matchups tab have the most data.</p>`;
+  const rows=Object.entries(d.cards).map(([n,q])=>({c:CBY[n],q})).filter(r=>r.c&&r.q); const tot=rows.reduce((s,r)=>s+r.q,0);
+  const sum=f=>rows.reduce((s,r)=>s+(f(r.c)?r.q:0),0);
+  const mine={C:sum(c=>c.c==='C'),E:sum(c=>c.c==='E'),S:sum(c=>c.c==='S'),c1:sum(c=>c.ct===1000),c2:sum(c=>c.ct===2000),blk:sum(c=>c.kw.includes('Blocker')),trg:sum(c=>c.kw.includes('Trigger')),cev:sum(c=>c.kw.includes('Counter Event')),avgcost:tot?+(rows.reduce((s,r)=>s+(r.c.cost??0)*r.q,0)/tot).toFixed(2):0};
+  const labels={C:'Characters',E:'Events',S:'Stages',c1:'+1000 counters',c2:'+2000 counters',blk:'Blockers',trg:'Triggers',cev:'Counter Events',avgcost:'Average cost'};
+  const crow=k=>{ const [mn,av,mx]=P.ranges[k]; const hi=Math.max(mx,mine[k],k==='avgcost'?6:10)*1.05; const pos=v=>Math.min(100,v/hi*100);
+    const st=mine[k]<mn?'Below':mine[k]>mx?'Above':'In range';
+    return `<div class="crow"><span>${labels[k]}</span><b>${mine[k]}</b><span class="range" title="Winning decks: ${mn}–${mx}, average ${av}"><span class="band" style="left:${pos(mn)}%;width:${Math.max(1,pos(mx)-pos(mn))}%"></span><span class="avg" style="left:${pos(av)}%"></span><span class="you" style="left:${pos(mine[k])}%"></span></span></div>
+      ${st!=='In range'&&tot>=40?`<div class="issue w" style="font-size:.8rem">${labels[k]}: you have ${mine[k]}. Winning ${esc(L.name)} decks run ${mn}–${mx} (average ${av}).</div>`:''}`; };
+  const curve=[...Array(11)].map((_,i)=>sum(c=>Math.min(c.cost??0,10)===i)); const mx=Math.max(...curve,...P.curve,1);
+  const core=P.cards.filter(x=>x.pct>=40).slice(0,22);
+  const coreHTML=core.map(x=>{ const c=CBY[x.n]; const have=d.cards[x.n]||0; const typ=Math.round(x.avg);
+    const st=!have?'<span class="st bad">Missing</span>':have<typ?`<span class="st mid">${have} of ~${typ}</span>`:'<span class="st good">✓ '+have+'</span>';
+    return `<div><button data-open="${x.n}">${esc(c?c.nm:x.n)} <small>${x.n}</small></button><small>${x.pct}%</small>${st}</div>`; }).join('');
+  return `<p class="explain">Compared with <b>${P.lists}</b> winning ${esc(L.name)} decklists from online tournaments (${MD.meta.winning_definition.toLowerCase()}), ${MD.meta.winning_from} to ${MD.meta.to}.${P.lists<8?' Small sample, so treat this as a rough guide.':''}</p>
+   <div class="legend"><span><i style="background:var(--accent);opacity:.35"></i>Winning range</span><span><i style="background:var(--accent)"></i>Winning average</span><span><i style="background:var(--fg)"></i>Your deck</span></div>
+   <div class="cmp">${['C','E','S','c1','c2','blk','cev','trg','avgcost'].map(crow).join('')}</div>
+   <div class="sec"><h6>Cost curve: yours (bars) vs winning average (red line)</h6><div class="curve2">${curve.map((n,i)=>`<div class="bar"><span>${n||''}</span><i style="height:${n/mx*85}%"></i><span class="tick" style="bottom:${P.curve[i]/mx*85}%"></span></div>`).join('')}</div>
+     <div class="axis">${curve.map((_,i)=>`<span>${i===10?'10+':i}</span>`).join('')}</div></div>
+   <div class="sec"><h6>Core cards in winning lists</h6><div class="core"><div><small style="text-align:left">Card</small><small>In lists</small><small>You</small></div>${coreHTML}</div>
+     <p class="explain">"In lists" is the share of winning decklists that include the card. Tap a card to read it or add it.</p></div>
+   <div class="sec"><h6>Start from a winning list</h6><div class="ex">${P.examples.slice(0,3).map((x,i)=>`<div><span>#${x.place} of ${x.players} · ${esc(x.event.slice(0,38))}<br><small>${x.date}${x.record?` · ${x.record.wins}–${x.record.losses}`:''}</small></span><button class="btn" data-ex="${i}">Copy as new deck</button></div>`).join('')}</div></div>`;
+}
+/* ---- deck panel: Matchups tab ---- */
+function matchupsHTML(d,L){
+  if(!MD) return `<p class="explain">Loading tournament data…</p>`;
+  const s=MD.leaders[L.num];
+  if(!s) return `<p class="explain">No online tournament games for ${esc(L.name)} (${L.num}) since ${MD.meta.from}.</p>`;
+  const rows=matchRows(L.num).sort((a,b)=>b.share-a.share);
+  const opp=B.opp && rows.find(r=>r.o===B.opp);
+  let focus='';
+  if(B.opp){
+    const r=opp||{o:B.opp,w:0,l:0,t:0,g:0,wr:null}; const P=MD.winning[B.opp]; const os=MD.leaders[B.opp];
+    focus=`<div class="box"><h4>Vs ${esc(lname(B.opp))} (${B.opp})</h4>
+      <div class="wr"><b class="${r.wr==null?'':r.wr>=.55?'good':r.wr<=.45?'bad':''}">${pctTxt(r.w,r.l)}</b><span>${r.g?`${r.w}–${r.l}${r.t?'–'+r.t:''} in ${r.g} games`:'No games recorded'}${r.g&&r.g<MIN_GAMES?' · small sample':''}</span></div>
+      ${os?`<p class="explain">${esc(lname(B.opp))} is played by ${os.share}% of online players and wins ${os.wr}% overall.</p>`:''}
+      ${P&&P.lists>=3?`<p class="explain" style="margin-top:6px">What to expect: winning ${esc(lname(B.opp))} decks average ${P.ranges.blk[1]} Blockers, ${P.ranges.cev[1]} Counter Events and ${P.ranges.trg[1]} Triggers. Cards they almost always play:</p>
+      <div class="core">${P.cards.slice(0,6).map(x=>{const c=CBY[x.n]; return `<div><button data-open="${x.n}">${esc(c?c.nm:x.n)} <small>${x.n}</small></button><small>${x.pct}%</small><small>~${Math.round(x.avg)} copies</small></div>`;}).join('')}</div>`:''}</div>`;
+  }
+  return `<div class="wr"><b class="${s.wr>=53?'good':s.wr<=47?'bad':''}">${s.wr}%</b><span>${esc(L.name)} overall · ${s.w}–${s.l}${s.t?'–'+s.t:''} · ${s.share}% of players</span></div>
+   <label class="explain" for="oppsel">Stress-test against a specific Leader</label>
+   <select class="oppsel" id="oppsel"><option value="">Choose an opponent…</option>${Object.entries(MD.leaders).sort((a,b)=>b[1].players-a[1].players).filter(([k])=>k!==L.num).map(([k,v])=>`<option value="${k}" ${B.opp===k?'selected':''}>${esc(lname(k))} (${k}) · ${v.share}%</option>`).join('')}</select>
+   ${focus}
+   <div class="sec"><h6>All matchups, most-played opponents first</h6><div class="mlist">${rows.map(mrowHTML).join('')||'<p class="explain">No matchups yet.</p>'}</div>
+   <p class="explain">Green is your Leader's share of wins. Faded rows have fewer than ${MIN_GAMES} games, so they can swing a lot. These results come from other players' versions of this Leader, not your exact list. Data: ${MD.meta.matches} matches in ${MD.meta.events} online Standard events on Limitless, ${MD.meta.from} to ${MD.meta.to} (since the current banned list).</p></div>`;
+}
+document.addEventListener('click', e=>{
+  const ex=e.target.closest('[data-ex]'); if(ex && B.deck){ const P=MD.winning[B.deck.leader]; const x=P.examples[+ex.dataset.ex]; const L=leaderBy(B.deck.leader);
+    const d={id:newId(), name:`${L.name} – ${x.event.slice(0,24)} #${x.place}`, leader:L.num, format:S.format, cards:Object.fromEntries(Object.entries(x.cards).filter(([n])=>CBY[n])), created:new Date().toISOString(), updated:''};
+    openDeck(d).then(()=>{ B.dirty=true; B.tab='list'; saveDraft(); renderPanel(); toast('Copied a winning list. Save it to keep it.'); }); }
+});
+document.addEventListener('change', e=>{ if(e.target.id==='oppsel'){ B.opp=e.target.value||null; renderPanel(); } });
+mdReady.then(()=>{ if(B.deck && (B.tab==='compare'||B.tab==='matchups')) renderPanel(); });
+</script>
+
+</body></html>

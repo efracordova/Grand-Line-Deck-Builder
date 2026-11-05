@@ -1,0 +1,7 @@
+{
+  "source": "https://en.onepiece-cardgame.com/rules/blockicon-card/ (updated 2026-10-30) and https://en.onepiece-cardgame.com/topics/025.php",
+  "standard": {"min_block": 2, "valid_through": "2027-03-31", "next_rotation": {"date": "2027-04-01", "min_block": 3}},
+  "block_always_legal": ["EB01-006","EB02-061","EB03-061","EB04-044","EB05-014","OP01-016","OP01-120","OP02-013","OP03-122","OP04-083","OP05-069","OP05-074","OP05-119","OP06-118","OP06-119","OP07-051","OP08-118","OP09-004","OP09-051","OP09-093","OP09-118","OP09-119","OP10-119","OP11-118","OP12-118","OP13-118","OP13-119","OP13-120","OP14-119","OP15-118","OP16-063","OP16-065","OP16-073","OP17-005","OP17-022","OP17-062","OP17-112","OP17-118"],
+  "block_override": {"OP01-039":"4","OP01-055":"4","OP02-005":"4","OP02-068":"4","OP03-008":"4","OP03-044":"4","OP03-048":"4","OP03-072":"4","OP03-097":"4","OP04-016":"4","OP04-077":"4","OP04-096":"4","ST01-011":"4","ST02-007":"4","ST06-008":"4"},
+  "notes": "Effective block of a card number = override if listed; 'X' if listed in block_always_legal or any printing is X; otherwise the highest block icon across all printings (reprints update the card number)."
+}
